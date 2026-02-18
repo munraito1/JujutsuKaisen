@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b \"C:\\\\Users\\\\Роман\\\\IdeaProjects\\\\JujutsuKaisen\\\\src\")",
+      "Bash(javac:*)",
+      "Bash(ls:*)",
+      "Bash(JAVA_HOME=\"/c/Users/Роман/.jdks/openjdk-25.0.2\":*)",
+      "Bash(\"$JAVA_HOME/bin/javac\" -d out src/enums/*.java src/techniques/*.java src/models/*.java src/models/heroes/*.java src/models/curses/*.java src/Main.java)",
+      "Bash(\"$JAVA_HOME/bin/java\" -cp out Main)",
+      "Bash(\"$JAVA_HOME/bin/javac\" -d out @sources.txt)",
+      "Bash(\"/c/Users/Роман/.jdks/openjdk-25.0.2/bin/javac\" -d out -sourcepath src src/Main.java)"
+    ]
+  }
+}
