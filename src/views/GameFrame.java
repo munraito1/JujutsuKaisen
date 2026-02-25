@@ -23,7 +23,7 @@ public class GameFrame extends JFrame implements GameListener,
     private District selectedDistrict;
 
     public GameFrame(SorcererTeam playerTeam) {
-        super("Jujutsu Kaisen — Карта Токио");
+        super("Jujutsu Kaisen");
 
         gameManager = new GameManager(playerTeam);
         gameManager.addListener(this);
@@ -45,12 +45,12 @@ public class GameFrame extends JFrame implements GameListener,
         topPanel.setBackground(new Color(60, 58, 55));
         topPanel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
 
-        statusLabel = new JLabel("Ход 1  |  Jujutsu High");
+        statusLabel = new JLabel("Ход 1  |  Магический техникум");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
         statusLabel.setForeground(Color.WHITE);
         topPanel.add(statusLabel, BorderLayout.WEST);
 
-        JLabel titleLabel = new JLabel("Карта районов Токио");
+        JLabel titleLabel = new JLabel("КартаТокио");
         titleLabel.setFont(new Font("Arial", Font.ITALIC, 12));
         titleLabel.setForeground(new Color(180, 180, 170));
         topPanel.add(titleLabel, BorderLayout.EAST);
