@@ -6,16 +6,12 @@ import models.NamedSorcerer;
 import techniques.BlackFlash;
 import techniques.DivergentFist;
 
-/**
- * Yuji Itadori - physical brawler and vessel of Sukuna.
- * High HP, high attack, high speed. Signature: Divergent Fist.
- */
 public class YujiItadori extends NamedSorcerer {
 
     private int divergentFistCharge;
 
     public YujiItadori() {
-        super("Yuji Itadori", "Vessel of Sukuna",
+        super("Юдзи Итадори", "Сосуд Сукуны",
                 120, 35, 15, 30, 80, Grade.GRADE_4);
         this.divergentFistCharge = 0;
         addTechnique(new DivergentFist());
@@ -29,18 +25,16 @@ public class YujiItadori extends NamedSorcerer {
             int damage = (int) (getAttack() * 1.8);
             target.takeDamage(damage);
             divergentFistCharge = 0;
-            System.out.printf("%s uses Divergent Fist on %s for %d raw damage!%n",
-                    getName(), target.getName(), damage);
-        } else {
-            System.out.printf("%s doesn't have enough cursed energy!%n", getName());
         }
     }
 
     @Override
     public void levelUp() {
         super.levelUp();
-        setAttack(getAttack() + 3); // bonus physical growth
+        setAttack(getAttack() + 3); 
     }
+
+    @Override public int getBasicAttackBlackFlashChance() { return 25; }
 
     @Override
     public int getAbilityCost() { return 15; }

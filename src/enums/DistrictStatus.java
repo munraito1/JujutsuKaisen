@@ -1,13 +1,10 @@
 package enums;
 
-/**
- * Status of a district on the world map.
- */
 public enum DistrictStatus {
-    LOCKED("Locked"),
-    HOSTILE("Hostile"),
-    CONTESTED("Contested"),
-    CONTROLLED("Controlled");
+    LOCKED("Заблокирован"),
+    HOSTILE("Враждебный"),
+    CONTESTED("Оспариваемый"),
+    CONTROLLED("Под контролем");
 
     private final String displayName;
 

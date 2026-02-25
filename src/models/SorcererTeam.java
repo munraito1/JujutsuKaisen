@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * A team of combatants (max 5 members).
- * Used for both sorcerer squads and curse groups.
- */
 public class SorcererTeam {
 
     private static final int MAX_TEAM_SIZE = 5;
@@ -22,7 +18,6 @@ public class SorcererTeam {
 
     public boolean addMember(Combatant combatant) {
         if (members.size() >= MAX_TEAM_SIZE) {
-            System.out.printf("Team %s is full! (max %d members)%n", teamName, MAX_TEAM_SIZE);
             return false;
         }
         members.add(combatant);

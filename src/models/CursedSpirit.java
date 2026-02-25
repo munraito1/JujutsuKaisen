@@ -2,10 +2,6 @@ package models;
 
 import enums.Grade;
 
-/**
- * Abstract base class for cursed spirits (enemies).
- * Has its own cursed energy pool and a curse grade.
- */
 public abstract class CursedSpirit extends Combatant {
 
     private int cursedEnergy;
@@ -32,13 +28,9 @@ public abstract class CursedSpirit extends Combatant {
         cursedEnergy = Math.min(maxCursedEnergy, cursedEnergy + amount);
     }
 
-    // --- Getters ---
-
     public int getCursedEnergy() { return cursedEnergy; }
     public int getMaxCursedEnergy() { return maxCursedEnergy; }
     public Grade getCurseGrade() { return curseGrade; }
-
-    // --- Protected setters ---
 
     protected void setCursedEnergy(int cursedEnergy) { this.cursedEnergy = cursedEnergy; }
     protected void setMaxCursedEnergy(int maxCursedEnergy) { this.maxCursedEnergy = maxCursedEnergy; }

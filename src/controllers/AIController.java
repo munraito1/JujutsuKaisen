@@ -7,10 +7,6 @@ import utils.Position;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Simple AI for enemy turns.
- * Strategy: move toward closest player, use best available technique, or basic attack.
- */
 public class AIController {
 
     private final BattleManager battleManager;
@@ -34,7 +30,6 @@ public class AIController {
             return;
         }
 
-        // Find closest player unit
         Combatant closestTarget = null;
         int minDist = Integer.MAX_VALUE;
         for (Combatant target : targets) {
@@ -53,7 +48,6 @@ public class AIController {
             return;
         }
 
-        // Move toward closest target
         Position targetPos = battleManager.getUnitPosition(closestTarget);
         List<Position> movable = battleManager.getMovablePositions();
         if (!movable.isEmpty() && targetPos != null) {
@@ -71,7 +65,6 @@ public class AIController {
             }
         }
 
-        // Try techniques (sorted by cost desc = strongest first)
         boolean acted = false;
         List<CursedTechnique> available = battleManager.getAvailableTechniques();
         if (!available.isEmpty()) {
@@ -87,7 +80,6 @@ public class AIController {
             }
         }
 
-        // Fallback: basic attack
         if (!acted) {
             List<Combatant> attackTargets = battleManager.getAttackableTargets();
             if (!attackTargets.isEmpty()) {
@@ -96,7 +88,6 @@ public class AIController {
             }
         }
 
-        // If nothing possible, defend
         if (!acted) {
             battleManager.defend();
         }

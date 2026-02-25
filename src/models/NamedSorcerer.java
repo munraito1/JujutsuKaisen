@@ -6,10 +6,6 @@ import techniques.CursedTechnique;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Abstract class for unique named sorcerer characters.
- * Each named sorcerer has unique techniques and a special ability.
- */
 public abstract class NamedSorcerer extends Sorcerer {
 
     private final List<CursedTechnique> techniques;
@@ -33,15 +29,10 @@ public abstract class NamedSorcerer extends Sorcerer {
     public String getTitle() { return title; }
     protected void setTitle(String title) { this.title = title; }
 
-    /**
-     * Use this sorcerer's signature ability on a target.
-     */
     public abstract void useSpecialAbility(Combatant target);
 
-    /** Cursed energy cost of the signature ability. */
     public abstract int getAbilityCost();
 
-    /** Display name of the signature ability. */
     public abstract String getAbilityName();
 
     @Override

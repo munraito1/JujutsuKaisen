@@ -1,9 +1,5 @@
 package models;
 
-/**
- * Abstract base class for all combat participants in the game.
- * Provides core stats: HP, attack, defense, speed, level.
- */
 public abstract class Combatant {
 
     private String name;
@@ -14,6 +10,8 @@ public abstract class Combatant {
     private int speed;
     private int level;
     private boolean alive;
+    private int experience;
+    private int expToNextLevel;
 
     public Combatant(String name, int maxHp, int attack, int defense, int speed) {
         this.name = name;
@@ -24,11 +22,10 @@ public abstract class Combatant {
         this.speed = speed;
         this.level = 1;
         this.alive = true;
+        this.experience = 0;
+        this.expToNextLevel = 100;
     }
 
-    /**
-     * Apply damage to this combatant. Damage is reduced by defense (minimum 1).
-     */
     public void takeDamage(int damage) {
         int actualDamage = Math.max(1, damage - defense);
         hp -= actualDamage;
@@ -38,19 +35,13 @@ public abstract class Combatant {
         }
     }
 
-    /**
-     * Heal this combatant. Cannot exceed max HP.
-     */
     public void heal(int amount) {
         if (!alive && amount > 0) {
-            return; // cannot heal the dead
+            return; 
         }
         hp = Math.min(maxHp, hp + amount);
     }
 
-    /**
-     * Level up: increase base stats.
-     */
     public void levelUp() {
         level++;
         maxHp += 10;
@@ -58,9 +49,20 @@ public abstract class Combatant {
         attack += 2;
         defense += 1;
         speed += 1;
+        expToNextLevel = level * 100;
     }
 
-    // --- Getters ---
+    public int addExperience(int xp) {
+        if (xp <= 0) return 0;
+        experience += xp;
+        int levelsGained = 0;
+        while (experience >= expToNextLevel) {
+            experience -= expToNextLevel;
+            levelUp();
+            levelsGained++;
+        }
+        return levelsGained;
+    }
 
     public String getName() { return name; }
     public int getHp() { return hp; }
@@ -70,8 +72,8 @@ public abstract class Combatant {
     public int getSpeed() { return speed; }
     public int getLevel() { return level; }
     public boolean isAlive() { return alive; }
-
-    // --- Protected setters for subclasses ---
+    public int getExperience() { return experience; }
+    public int getExpToNextLevel() { return expToNextLevel; }
 
     protected void setHp(int hp) { this.hp = Math.min(maxHp, Math.max(0, hp)); }
     protected void setMaxHp(int maxHp) { this.maxHp = maxHp; }
@@ -81,23 +83,16 @@ public abstract class Combatant {
     protected void setLevel(int level) { this.level = level; }
     protected void setAlive(boolean alive) { this.alive = alive; }
 
-    /**
-     * Movement range on battle grid (tiles per turn). Derived from speed.
-     */
+    public int getBasicAttackBlackFlashChance() { return 5; }
+
     public int getMovementRange() {
         return Math.max(2, getSpeed() / 10);
     }
 
-    /**
-     * Basic attack range (Chebyshev distance). 1 = melee.
-     */
     public int getAttackRange() {
         return 1;
     }
 
-    /**
-     * Return a detailed multi-line description of this combatant.
-     */
     public abstract String getInfo();
 
     @Override

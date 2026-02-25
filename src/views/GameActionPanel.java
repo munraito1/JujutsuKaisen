@@ -2,22 +2,25 @@ package views;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-/**
- * Bottom panel with game action buttons: Travel, Start Mission, End Turn, Team Info.
- */
 public class GameActionPanel extends JPanel {
 
-    private static final Color BG_COLOR = new Color(60, 58, 55);
-    private static final Color TRAVEL_COLOR = new Color(60, 120, 200);
-    private static final Color MISSION_COLOR = new Color(200, 60, 60);
-    private static final Color END_TURN_COLOR = new Color(120, 120, 120);
-    private static final Color TEAM_INFO_COLOR = new Color(80, 160, 80);
+    private static final Color BG_COLOR        = new Color(42, 40, 37);
+    private static final Color TRAVEL_COLOR    = new Color(50, 110, 200);
+    private static final Color MISSION_COLOR   = new Color(190, 55, 55);
+    private static final Color END_TURN_COLOR  = new Color(110, 110, 110);
+    private static final Color TEAM_INFO_COLOR = new Color(65, 150, 70);
+    private static final Color BUILDINGS_COLOR = new Color(145, 90, 25);
+    private static final Color TECH_COLOR      = new Color(90, 55, 170);
 
     private JButton travelButton;
     private JButton missionButton;
     private JButton endTurnButton;
     private JButton teamInfoButton;
+    private JButton buildingsButton;
+    private JButton techTreeButton;
 
     private GameActionListener actionListener;
 
@@ -26,20 +29,26 @@ public class GameActionPanel extends JPanel {
         void onStartMissionClicked();
         void onEndTurnClicked();
         void onTeamInfoClicked();
+        void onBuildingsClicked();
+        void onTechTreeClicked();
     }
 
     public GameActionPanel() {
         setBackground(BG_COLOR);
-        setLayout(new FlowLayout(FlowLayout.CENTER, 12, 8));
-        setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
+        setLayout(new FlowLayout(FlowLayout.CENTER, 10, 6));
+        setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
 
-        travelButton = createButton("Travel", TRAVEL_COLOR);
-        missionButton = createButton("Start Mission", MISSION_COLOR);
-        endTurnButton = createButton("End Turn", END_TURN_COLOR);
-        teamInfoButton = createButton("Team Info", TEAM_INFO_COLOR);
+        travelButton    = createButton("▶ Перемещение",   TRAVEL_COLOR);
+        missionButton   = createButton("⚔ Начать миссию", MISSION_COLOR);
+        buildingsButton = createButton("🏛 Здания",        BUILDINGS_COLOR);
+        techTreeButton  = createButton("🔬 Технологии",    TECH_COLOR);
+        endTurnButton   = createButton("⏭ Конец хода",    END_TURN_COLOR);
+        teamInfoButton  = createButton("👥 Команда",       TEAM_INFO_COLOR);
 
         add(travelButton);
         add(missionButton);
+        add(buildingsButton);
+        add(techTreeButton);
         add(endTurnButton);
         add(teamInfoButton);
 
@@ -48,6 +57,12 @@ public class GameActionPanel extends JPanel {
         });
         missionButton.addActionListener(e -> {
             if (actionListener != null) actionListener.onStartMissionClicked();
+        });
+        buildingsButton.addActionListener(e -> {
+            if (actionListener != null) actionListener.onBuildingsClicked();
+        });
+        techTreeButton.addActionListener(e -> {
+            if (actionListener != null) actionListener.onTechTreeClicked();
         });
         endTurnButton.addActionListener(e -> {
             if (actionListener != null) actionListener.onEndTurnClicked();
@@ -61,29 +76,31 @@ public class GameActionPanel extends JPanel {
         this.actionListener = listener;
     }
 
-    public void setTravelEnabled(boolean enabled) {
-        travelButton.setEnabled(enabled);
-    }
+    public void setTravelEnabled(boolean enabled)  { travelButton.setEnabled(enabled); }
+    public void setMissionEnabled(boolean enabled) { missionButton.setEnabled(enabled); }
+    public void setEndTurnEnabled(boolean enabled) { endTurnButton.setEnabled(enabled); }
 
-    public void setMissionEnabled(boolean enabled) {
-        missionButton.setEnabled(enabled);
-    }
-
-    public void setEndTurnEnabled(boolean enabled) {
-        endTurnButton.setEnabled(enabled);
-    }
-
-    private JButton createButton(String text, Color bgColor) {
+    private JButton createButton(String text, Color bg) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.BOLD, 13));
-        button.setBackground(bgColor);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+        button.setBackground(bg);
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(bgColor.darker(), 1),
-                BorderFactory.createEmptyBorder(6, 16, 6, 16)));
+                BorderFactory.createLineBorder(bg.darker(), 1),
+                BorderFactory.createEmptyBorder(5, 14, 5, 14)));
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         button.setOpaque(true);
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) {
+                if (button.isEnabled()) button.setBackground(bg.brighter());
+            }
+            @Override public void mouseExited(MouseEvent e) {
+                button.setBackground(bg);
+            }
+        });
+
         return button;
     }
 }

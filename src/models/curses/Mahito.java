@@ -4,18 +4,13 @@ import models.Combatant;
 import models.SpecialCurse;
 import techniques.IdleTransfigurationTechnique;
 
-/**
- * Mahito - Special Grade cursed spirit.
- * Idle Transfiguration: manipulates the shape of souls.
- * Domain: Self-Embodiment of Perfection.
- */
 public class Mahito extends SpecialCurse {
 
     private boolean idleTransfigurationActive;
 
     public Mahito() {
-        super("Mahito", 200, 30, 20, 22, 150,
-                "Self-Embodiment of Perfection");
+        super("Махито", 200, 30, 20, 22, 150,
+                "Воплощение совершенства");
         this.idleTransfigurationActive = false;
         addTechnique(new IdleTransfigurationTechnique());
     }
@@ -27,12 +22,10 @@ public class Mahito extends SpecialCurse {
             int damage = (int) (getAttack() * 2.0);
             target.takeDamage(damage);
             idleTransfigurationActive = true;
-            System.out.printf("%s uses Idle Transfiguration on %s for %d raw damage!%n",
-                    getName(), target.getName(), damage);
-        } else {
-            System.out.printf("%s doesn't have enough cursed energy!%n", getName());
         }
     }
+
+    @Override public int getBasicAttackBlackFlashChance() { return 8; }
 
     @Override
     public int getAbilityCost() { return 30; }

@@ -1,21 +1,14 @@
 package views;
 
-import controllers.BattleListener;
 import controllers.GameListener;
 import controllers.GameManager;
 import enums.BattleState;
-import models.Combatant;
 import models.District;
 import models.SorcererTeam;
 
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Main game window with the world map.
- * Implements GameListener to react to game state changes.
- * Launches BattleFrame for combat and handles the result.
- */
 public class GameFrame extends JFrame implements GameListener,
         MapPanel.DistrictSelectionListener, GameActionPanel.GameActionListener {
 
@@ -30,15 +23,16 @@ public class GameFrame extends JFrame implements GameListener,
     private District selectedDistrict;
 
     public GameFrame(SorcererTeam playerTeam) {
-        super("Jujutsu Kaisen - Tokyo Map");
+        super("Jujutsu Kaisen — Карта Токио");
 
         gameManager = new GameManager(playerTeam);
         gameManager.addListener(this);
 
         initUI();
         refreshMap();
-        log("Welcome to Jujutsu Kaisen! You are at " + gameManager.getCurrentDistrict().getName() + ".");
-        log("Click on a neighboring district and press Travel to move.");
+        log("Добро пожаловать в Jujutsu Kaisen! Вы находитесь в «"
+                + gameManager.getCurrentDistrict().getName() + "».");
+        log("Нажмите на соседний район и выберите «Перемещение» для перехода.");
     }
 
     private void initUI() {
@@ -47,35 +41,31 @@ public class GameFrame extends JFrame implements GameListener,
         setResizable(false);
         getContentPane().setBackground(new Color(50, 48, 45));
 
-        // --- Top: status bar ---
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(new Color(60, 58, 55));
         topPanel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
 
-        statusLabel = new JLabel("Turn 1  |  Jujutsu High");
+        statusLabel = new JLabel("Ход 1  |  Jujutsu High");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
         statusLabel.setForeground(Color.WHITE);
         topPanel.add(statusLabel, BorderLayout.WEST);
 
-        JLabel titleLabel = new JLabel("Tokyo District Map");
+        JLabel titleLabel = new JLabel("Карта районов Токио");
         titleLabel.setFont(new Font("Arial", Font.ITALIC, 12));
         titleLabel.setForeground(new Color(180, 180, 170));
         topPanel.add(titleLabel, BorderLayout.EAST);
 
         add(topPanel, BorderLayout.NORTH);
 
-        // --- Center: map panel ---
         mapPanel = new MapPanel();
         mapPanel.setSelectionListener(this);
         mapPanel.setWorldMap(gameManager.getWorldMap());
         mapPanel.setCurrentDistrict(gameManager.getCurrentDistrict());
         add(mapPanel, BorderLayout.CENTER);
 
-        // --- East: district info ---
         infoPanel = new DistrictInfoPanel();
         add(infoPanel, BorderLayout.EAST);
 
-        // --- South: actions + log ---
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setBackground(new Color(50, 48, 45));
 
@@ -91,7 +81,7 @@ public class GameFrame extends JFrame implements GameListener,
         JScrollPane logScroll = new JScrollPane(logArea);
         logScroll.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.GRAY),
-                "Game Log", 0, 0, null, Color.GRAY));
+                "Журнал", 0, 0, null, Color.GRAY));
         bottomPanel.add(logScroll, BorderLayout.CENTER);
 
         add(bottomPanel, BorderLayout.SOUTH);
@@ -109,9 +99,15 @@ public class GameFrame extends JFrame implements GameListener,
     }
 
     private void updateStatusLabel() {
-        statusLabel.setText(String.format("Turn %d  |  %s  |  Team: %d/%d alive",
+        statusLabel.setText(String.format(
+                "<html>Ход <b>%d</b> &nbsp;|&nbsp; %s &nbsp;|&nbsp; " +
+                "<span style='color:#e8d060'>¥%d</span> &nbsp;|&nbsp; " +
+                "<span style='color:#b880f0'>ОР: %d</span> &nbsp;|&nbsp; " +
+                "<span style='color:#80d080'>Команда: %d/%d</span></html>",
                 gameManager.getTurnNumber(),
                 gameManager.getCurrentDistrict().getName(),
+                gameManager.getYuan(),
+                gameManager.getGradePoints(),
                 gameManager.getPlayerTeam().getAliveMembers().size(),
                 gameManager.getPlayerTeam().getSize()));
     }
@@ -128,16 +124,12 @@ public class GameFrame extends JFrame implements GameListener,
         actionPanel.setEndTurnEnabled(true);
     }
 
-    // ==================== MapPanel.DistrictSelectionListener ====================
-
     @Override
     public void onDistrictSelected(District district) {
         selectedDistrict = district;
         infoPanel.showDistrict(district);
         updateActionButtons();
     }
-
-    // ==================== GameActionPanel.GameActionListener ====================
 
     @Override
     public void onTravelClicked() {
@@ -154,26 +146,21 @@ public class GameFrame extends JFrame implements GameListener,
         SorcererTeam enemies = gameManager.startMission();
         if (enemies == null) return;
 
-        log("Entering battle in " + gameManager.getCurrentDistrict().getName() + "...");
+        log("Начинается бой в «" + gameManager.getCurrentDistrict().getName() + "»...");
 
-        // Hide map, launch battle
         setVisible(false);
 
         SorcererTeam playerCopy = gameManager.getPlayerTeam();
-        BattleFrame battleFrame = new BattleFrame(playerCopy, enemies);
-
-        // Override close operation so it doesn't exit the app
+        BattleFrame battleFrame = new BattleFrame(playerCopy, enemies,
+                gameManager.getTechTree(), gameManager.getCurrentMission());
         battleFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        // Listen for battle end via the BattleManager's listener
-        battleFrame.setBattleEndCallback(result -> {
-            SwingUtilities.invokeLater(() -> {
-                battleFrame.dispose();
-                gameManager.onBattleFinished(result);
-                setVisible(true);
-                refreshMap();
-            });
-        });
+        battleFrame.setBattleEndCallback(result -> SwingUtilities.invokeLater(() -> {
+            battleFrame.dispose();
+            gameManager.onBattleFinished(result);
+            setVisible(true);
+            refreshMap();
+        }));
 
         battleFrame.setVisible(true);
     }
@@ -185,23 +172,25 @@ public class GameFrame extends JFrame implements GameListener,
     }
 
     @Override
-    public void onTeamInfoClicked() {
-        SorcererTeam team = gameManager.getPlayerTeam();
-        StringBuilder sb = new StringBuilder();
-        sb.append(team.getInfo()).append("\n");
-        for (Combatant c : team.getMembers()) {
-            sb.append(c.getInfo()).append("\n\n");
-        }
-        JTextArea textArea = new JTextArea(sb.toString());
-        textArea.setEditable(false);
-        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        scrollPane.setPreferredSize(new Dimension(400, 300));
-        JOptionPane.showMessageDialog(this, scrollPane, "Team Info",
-                JOptionPane.INFORMATION_MESSAGE);
+    public void onBuildingsClicked() {
+        BuildingFrame buildingFrame = new BuildingFrame(this, gameManager);
+        buildingFrame.setVisible(true);
+        updateStatusLabel();
     }
 
-    // ==================== GameListener ====================
+    @Override
+    public void onTechTreeClicked() {
+        TechTreeFrame techTreeFrame = new TechTreeFrame(this, gameManager);
+        techTreeFrame.setVisible(true);
+        updateStatusLabel();
+    }
+
+    @Override
+    public void onTeamInfoClicked() {
+        HeroManagementFrame heroFrame = new HeroManagementFrame(this, gameManager);
+        heroFrame.setVisible(true);
+        updateStatusLabel();
+    }
 
     @Override
     public void onDistrictChanged(District district) {
@@ -214,21 +203,21 @@ public class GameFrame extends JFrame implements GameListener,
     @Override
     public void onTurnAdvanced(int turnNumber) {
         updateStatusLabel();
-        log("--- Turn " + turnNumber + " ---");
+        log("--- Ход " + turnNumber + " ---");
         mapPanel.repaint();
     }
 
     @Override
     public void onBattleStarted(District district) {
-        log("Battle started in " + district.getName() + "!");
+        log("Бой начат в «" + district.getName() + "»!");
     }
 
     @Override
     public void onBattleFinished(District district, BattleState result) {
         if (result == BattleState.VICTORY) {
-            log("Victory in " + district.getName() + "! District secured.");
+            log("Победа в «" + district.getName() + "»! Район захвачен.");
         } else {
-            log("Defeat! Retreated to base.");
+            log("Поражение! Отступаем на базу.");
         }
         refreshMap();
     }

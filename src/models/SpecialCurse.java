@@ -6,10 +6,6 @@ import techniques.CursedTechnique;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Abstract class for unique boss-level cursed spirits (Special Grade).
- * Each has named techniques and a domain expansion.
- */
 public abstract class SpecialCurse extends CursedSpirit {
 
     private final List<CursedTechnique> techniques;
@@ -32,15 +28,10 @@ public abstract class SpecialCurse extends CursedSpirit {
 
     public String getDomainName() { return domainName; }
 
-    /**
-     * Use this curse's signature ability on a target.
-     */
     public abstract void useSpecialAbility(Combatant target);
 
-    /** Cursed energy cost of the signature ability. */
     public abstract int getAbilityCost();
 
-    /** Display name of the signature ability. */
     public abstract String getAbilityName();
 
     @Override

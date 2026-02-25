@@ -2,9 +2,6 @@ package models;
 
 import enums.Grade;
 
-/**
- * Generic cursed spirit mob (swarm). Acts as a single unit but members die as HP drops.
- */
 public class CursedSpiritMob extends CursedSpirit {
 
     private final int swarmSize;
@@ -40,8 +37,6 @@ public class CursedSpiritMob extends CursedSpirit {
                 getName(), getCurseGrade().getDisplayName(), membersAlive, swarmSize,
                 getHp(), getMaxHp(), getAttack(), getDefense(), getSpeed());
     }
-
-    // --- Factory methods ---
 
     public static CursedSpiritMob createSwarm() {
         return new CursedSpiritMob("Cursed Spirit Swarm", Grade.GRADE_4,

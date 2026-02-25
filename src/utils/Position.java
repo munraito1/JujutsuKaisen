@@ -24,9 +24,6 @@ public class Position {
         return Math.abs(x - other.x) + Math.abs(y - other.y);
     }
 
-    /**
-     * Returns all 8 neighboring positions (does not check bounds).
-     */
     public List<Position> getNeighbors() {
         List<Position> neighbors = new ArrayList<>(8);
         for (int dx = -1; dx <= 1; dx++) {

@@ -2,10 +2,6 @@ package models;
 
 import enums.Grade;
 
-/**
- * A squad of generic sorcerers acting as a single unit.
- * Total HP = hpPerMember * squadSize. Members die as HP decreases.
- */
 public class GenericSorcererSquad extends Sorcerer {
 
     private final int squadSize;
@@ -41,8 +37,6 @@ public class GenericSorcererSquad extends Sorcerer {
                 getName(), getGrade().getDisplayName(), membersAlive, squadSize,
                 getHp(), getMaxHp(), getAttack(), getDefense(), getSpeed());
     }
-
-    // --- Factory methods ---
 
     public static GenericSorcererSquad createGrade3Squad() {
         return new GenericSorcererSquad("Grade 3 Sorcerer Squad", Grade.GRADE_3,

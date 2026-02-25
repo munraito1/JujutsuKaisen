@@ -4,18 +4,15 @@ import models.Combatant;
 import models.SpecialCurse;
 import techniques.VolcanicAttackTechnique;
 
-/**
- * Jogo - Special Grade cursed spirit born from humanity's fear of fire/volcanoes.
- * High attack power, fire-based abilities.
- * Domain: Coffin of the Iron Mountain.
- */
 public class Jogo extends SpecialCurse {
 
     public Jogo() {
-        super("Jogo", 180, 40, 15, 25, 140,
-                "Coffin of the Iron Mountain");
+        super("Дзёго", 180, 40, 15, 25, 140,
+                "Гроб железной горы");
         addTechnique(new VolcanicAttackTechnique());
     }
+
+    @Override public int getBasicAttackBlackFlashChance() { return 5; }
 
     @Override
     public int getAbilityCost() { return 35; }
@@ -29,10 +26,6 @@ public class Jogo extends SpecialCurse {
         if (useCursedEnergy(cost)) {
             int damage = (int) (getAttack() * 2.2);
             target.takeDamage(damage);
-            System.out.printf("%s launches a Volcanic Attack on %s for %d raw damage!%n",
-                    getName(), target.getName(), damage);
-        } else {
-            System.out.printf("%s doesn't have enough cursed energy!%n", getName());
         }
     }
 }

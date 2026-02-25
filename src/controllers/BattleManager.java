@@ -3,16 +3,13 @@ package controllers;
 import enums.BattleState;
 import enums.TileType;
 import models.*;
+import models.TechTree;
 import techniques.CursedTechnique;
 import utils.Position;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Core battle engine. Manages grid, turn order, movement, combat,
- * technique cooldowns, and win/lose conditions.
- */
 public class BattleManager {
 
     public static final int GRID_SIZE = 10;
@@ -31,8 +28,13 @@ public class BattleManager {
     private boolean currentUnitActed;
     private final List<BattleListener> listeners;
 
-    // Cooldown tracking: technique instance -> remaining turns
     private final Map<CursedTechnique, Integer> cooldowns;
+
+    private TechTree techTree;
+
+    private int maxRounds = 0;
+
+    private final Random random = new Random();
 
     private static final Position[] PLAYER_STARTS = {
             new Position(1, 2), new Position(1, 4), new Position(1, 6),
@@ -63,8 +65,6 @@ public class BattleManager {
             }
         }
     }
-
-    // ==================== Setup ====================
 
     public void initBattle(SorcererTeam player, SorcererTeam enemy) {
         this.playerTeam = player;
@@ -106,8 +106,6 @@ public class BattleManager {
         startCurrentTurn();
     }
 
-    // ==================== Turn management ====================
-
     private void startCurrentTurn() {
         while (currentTurnIndex < turnOrder.size() && !turnOrder.get(currentTurnIndex).isAlive()) {
             currentTurnIndex++;
@@ -120,12 +118,23 @@ public class BattleManager {
             defendingUnits.clear();
             tickCooldowns();
 
+            if (maxRounds > 0 && roundNumber > maxRounds) {
+                state = BattleState.DEFEAT;
+                fireMessage("=== Время вышло! Миссия провалена! ===");
+                for (BattleListener l : listeners) l.onBattleEnded(BattleState.DEFEAT);
+                return;
+            }
+
             if (turnOrder.isEmpty()) {
                 checkBattleEnd();
                 return;
             }
 
-            fireMessage("=== Round " + roundNumber + " ===");
+            String roundMsg = "=== Round " + roundNumber + " ===";
+            if (maxRounds > 0) {
+                roundMsg += " [Осталось ходов: " + (maxRounds - roundNumber + 1) + "]";
+            }
+            fireMessage(roundMsg);
             startCurrentTurn();
             return;
         }
@@ -151,8 +160,6 @@ public class BattleManager {
 
         startCurrentTurn();
     }
-
-    // ==================== Movement ====================
 
     public List<Position> getMovablePositions() {
         if (currentUnitMoved) return Collections.emptyList();
@@ -214,8 +221,6 @@ public class BattleManager {
         return true;
     }
 
-    // ==================== Basic Attack ====================
-
     public List<Combatant> getAttackableTargets() {
         if (currentUnitActed) return Collections.emptyList();
         Combatant unit = getCurrentUnit();
@@ -242,6 +247,10 @@ public class BattleManager {
         if (attacker == null) return 0;
 
         int damage = attacker.getAttack();
+        
+        if (techTree != null && isPlayerUnit(attacker)) {
+            damage = (int) (damage * (1.0 + techTree.getDamageBonusPct()));
+        }
         if (defendingUnits.contains(target)) {
             damage = (int) (damage * 0.5);
         }
@@ -249,9 +258,17 @@ public class BattleManager {
         int hpBefore = target.getHp();
         target.takeDamage(damage);
         int actualDamage = hpBefore - target.getHp();
+
+        boolean blackFlash = random.nextInt(100) < attacker.getBasicAttackBlackFlashChance();
+        if (blackFlash) {
+            int bonus = (int) (actualDamage * 1.5);
+            target.takeDamage(bonus);
+            actualDamage += bonus;
+        }
+
         currentUnitActed = true;
 
-        for (BattleListener l : listeners) l.onUnitAttacked(attacker, target, actualDamage);
+        for (BattleListener l : listeners) l.onUnitAttacked(attacker, target, actualDamage, blackFlash);
 
         if (!target.isAlive()) {
             handleUnitDeath(target);
@@ -259,16 +276,12 @@ public class BattleManager {
         return actualDamage;
     }
 
-    // ==================== Technique System ====================
-
-    /** Get all techniques for the current unit. */
     public List<CursedTechnique> getAllTechniquesForUnit(Combatant unit) {
         if (unit instanceof NamedSorcerer) return ((NamedSorcerer) unit).getTechniques();
         if (unit instanceof SpecialCurse) return ((SpecialCurse) unit).getTechniques();
         return Collections.emptyList();
     }
 
-    /** Get techniques that are off cooldown and affordable for the current unit. */
     public List<CursedTechnique> getAvailableTechniques() {
         if (currentUnitActed) return Collections.emptyList();
         Combatant unit = getCurrentUnit();
@@ -276,13 +289,15 @@ public class BattleManager {
 
         int ce = getUnitCE(unit);
         List<CursedTechnique> all = getAllTechniquesForUnit(unit);
+        double costMult = (techTree != null && isPlayerUnit(unit))
+                ? techTree.getCECostMultiplier() : 1.0;
 
         return all.stream()
-                .filter(t -> getCooldownRemaining(t) == 0 && t.getCursedEnergyCost() <= ce)
+                .filter(t -> getCooldownRemaining(t) == 0
+                        && (int) Math.ceil(t.getCursedEnergyCost() * costMult) <= ce)
                 .collect(Collectors.toList());
     }
 
-    /** Get enemies in range of a specific technique. */
     public List<Combatant> getTechniqueTargets(CursedTechnique tech) {
         if (currentUnitActed) return Collections.emptyList();
         Combatant unit = getCurrentUnit();
@@ -300,33 +315,39 @@ public class BattleManager {
                 .collect(Collectors.toList());
     }
 
-    /** Execute a chosen technique on a target. Handles CE, cooldown, events. */
     public boolean useTechnique(CursedTechnique tech, Combatant target) {
         if (currentUnitActed) return false;
         Combatant user = getCurrentUnit();
         if (user == null) return false;
 
         int cost = tech.getCursedEnergyCost();
+        
+        if (techTree != null && isPlayerUnit(user)) {
+            cost = (int) Math.ceil(cost * techTree.getCECostMultiplier());
+        }
         if (!spendCE(user, cost)) return false;
 
-        // Capture position before damage (target may die)
         Position targetPos = unitPositions.get(target);
 
         int hpBefore = target.getHp();
-        if (defendingUnits.contains(target)) {
-            // Defending reduces technique damage too
-            int tempDef = target.getDefense();
-            // We let execute() handle raw damage; defense subtraction is in takeDamage
-        }
         tech.execute(user, target);
         int actualDamage = hpBefore - target.getHp();
+
+        String animType = tech.getAnimationType();
+        if (tech.canTriggerBlackFlash() && tech.getBlackFlashChance() > 0
+                && random.nextInt(100) < tech.getBlackFlashChance()) {
+            int bonus = (int) (actualDamage * 1.5);
+            target.takeDamage(bonus);
+            actualDamage += bonus;
+            animType = "BLACK_FLASH";
+        }
 
         cooldowns.put(tech, tech.getCooldown());
         currentUnitActed = true;
 
         for (BattleListener l : listeners) {
             l.onTechniqueUsed(user, target, tech.getName(), actualDamage,
-                    tech.getAnimationType(), targetPos);
+                    animType, targetPos);
         }
 
         if (!target.isAlive()) {
@@ -335,12 +356,14 @@ public class BattleManager {
         return true;
     }
 
-    /** Check if the unit has any usable technique (for UI enable/disable). */
     public boolean hasUsableTechniques(Combatant unit) {
         if (currentUnitActed) return false;
         int ce = getUnitCE(unit);
         List<CursedTechnique> all = getAllTechniquesForUnit(unit);
-        return all.stream().anyMatch(t -> getCooldownRemaining(t) == 0 && t.getCursedEnergyCost() <= ce);
+        double costMult = (techTree != null && isPlayerUnit(unit))
+                ? techTree.getCECostMultiplier() : 1.0;
+        return all.stream().anyMatch(t -> getCooldownRemaining(t) == 0
+                && (int) Math.ceil(t.getCursedEnergyCost() * costMult) <= ce);
     }
 
     public int getCooldownRemaining(CursedTechnique tech) {
@@ -350,8 +373,6 @@ public class BattleManager {
     private void tickCooldowns() {
         cooldowns.replaceAll((tech, cd) -> Math.max(0, cd - 1));
     }
-
-    // ==================== Defend ====================
 
     public void defend() {
         if (currentUnitActed) return;
@@ -364,8 +385,6 @@ public class BattleManager {
 
         for (BattleListener l : listeners) l.onUnitDefended(unit);
     }
-
-    // ==================== Death ====================
 
     private void handleUnitDeath(Combatant unit) {
         Position pos = unitPositions.get(unit);
@@ -382,8 +401,6 @@ public class BattleManager {
         if (enemyTeam.isDefeated()) return BattleState.VICTORY;
         return state;
     }
-
-    // ==================== Queries ====================
 
     public Combatant getCurrentUnit() {
         if (currentTurnIndex >= 0 && currentTurnIndex < turnOrder.size()) {
@@ -402,6 +419,7 @@ public class BattleManager {
 
     public boolean isCurrentUnitMoved() { return currentUnitMoved; }
     public boolean isCurrentUnitActed() { return currentUnitActed; }
+    public boolean isDefending(Combatant unit) { return defendingUnits.contains(unit); }
     public BattleState getState() { return state; }
     public int getRoundNumber() { return roundNumber; }
     public List<Combatant> getTurnOrder() { return Collections.unmodifiableList(turnOrder); }
@@ -411,7 +429,13 @@ public class BattleManager {
 
     public void addListener(BattleListener listener) { listeners.add(listener); }
 
-    // ==================== Helpers ====================
+    public void setTechTree(TechTree techTree) { this.techTree = techTree; }
+
+    public void setMaxRounds(int maxRounds) { this.maxRounds = maxRounds; }
+    public int  getMaxRounds()              { return maxRounds; }
+    public int  getRoundsRemaining() {
+        return maxRounds > 0 ? Math.max(0, maxRounds - roundNumber + 1) : -1;
+    }
 
     private boolean isValidPosition(Position p) {
         return p.getX() >= 0 && p.getX() < GRID_SIZE

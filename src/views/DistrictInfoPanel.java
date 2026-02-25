@@ -3,28 +3,27 @@ package views;
 import enums.DistrictStatus;
 import models.Combatant;
 import models.District;
+import models.Mission;
 import models.SorcererTeam;
 
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Side panel showing information about the selected district.
- */
 public class DistrictInfoPanel extends JPanel {
 
-    private static final Color BG_COLOR = new Color(60, 58, 55);
-    private static final Color TEXT_COLOR = new Color(220, 220, 210);
-    private static final Color LABEL_COLOR = new Color(160, 160, 150);
+    private static final Color BG_COLOR       = new Color(60, 58, 55);
+    private static final Color TEXT_COLOR     = new Color(220, 220, 210);
+    private static final Color LABEL_COLOR    = new Color(160, 160, 150);
     private static final Color CONTROLLED_COLOR = new Color(80, 180, 80);
-    private static final Color HOSTILE_COLOR = new Color(200, 60, 60);
-    private static final Color LOCKED_COLOR = new Color(120, 120, 120);
+    private static final Color HOSTILE_COLOR  = new Color(200, 60, 60);
+    private static final Color LOCKED_COLOR   = new Color(120, 120, 120);
     private static final Color CONTESTED_COLOR = new Color(220, 200, 50);
 
     private JLabel nameLabel;
     private JLabel statusLabel;
     private JLabel threatLabel;
     private JLabel incomeLabel;
+    private JLabel missionLabel;
     private JTextArea descriptionArea;
     private JTextArea enemyArea;
 
@@ -34,36 +33,34 @@ public class DistrictInfoPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-        // Title
-        JLabel title = new JLabel("District Info");
+        JLabel title = new JLabel("Информация о районе");
         title.setFont(new Font("Arial", Font.BOLD, 14));
         title.setForeground(TEXT_COLOR);
         title.setAlignmentX(LEFT_ALIGNMENT);
         add(title);
         add(Box.createVerticalStrut(10));
 
-        // District name
         nameLabel = createLabel("--", new Font("Arial", Font.BOLD, 16), TEXT_COLOR);
         add(nameLabel);
         add(Box.createVerticalStrut(6));
 
-        // Status
-        statusLabel = createLabel("Status: --", new Font("Arial", Font.PLAIN, 12), LABEL_COLOR);
+        statusLabel = createLabel("Статус: --", new Font("Arial", Font.PLAIN, 12), LABEL_COLOR);
         add(statusLabel);
         add(Box.createVerticalStrut(4));
 
-        // Threat level
-        threatLabel = createLabel("Threat: --", new Font("Arial", Font.PLAIN, 12), LABEL_COLOR);
+        threatLabel = createLabel("Угроза: --", new Font("Arial", Font.PLAIN, 12), LABEL_COLOR);
         add(threatLabel);
         add(Box.createVerticalStrut(4));
 
-        // Income
-        incomeLabel = createLabel("Income: --", new Font("Arial", Font.PLAIN, 12), LABEL_COLOR);
+        incomeLabel = createLabel("Доход: --", new Font("Arial", Font.PLAIN, 12), LABEL_COLOR);
         add(incomeLabel);
+        add(Box.createVerticalStrut(4));
+
+        missionLabel = createLabel("Миссия: --", new Font("Arial", Font.BOLD, 12), new Color(180, 140, 80));
+        add(missionLabel);
         add(Box.createVerticalStrut(10));
 
-        // Description
-        JLabel descTitle = createLabel("Description:", new Font("Arial", Font.BOLD, 11), LABEL_COLOR);
+        JLabel descTitle = createLabel("Описание:", new Font("Arial", Font.BOLD, 11), LABEL_COLOR);
         add(descTitle);
         add(Box.createVerticalStrut(4));
 
@@ -80,8 +77,7 @@ public class DistrictInfoPanel extends JPanel {
         add(descriptionArea);
         add(Box.createVerticalStrut(10));
 
-        // Enemy info
-        JLabel enemyTitle = createLabel("Enemies:", new Font("Arial", Font.BOLD, 11), LABEL_COLOR);
+        JLabel enemyTitle = createLabel("Враги:", new Font("Arial", Font.BOLD, 11), LABEL_COLOR);
         add(enemyTitle);
         add(Box.createVerticalStrut(4));
 
@@ -103,29 +99,33 @@ public class DistrictInfoPanel extends JPanel {
     }
 
     public void showDistrict(District district) {
-        if (district == null) {
-            clear();
-            return;
-        }
+        if (district == null) { clear(); return; }
 
         nameLabel.setText(district.getName());
 
         DistrictStatus status = district.getStatus();
-        statusLabel.setText("Status: " + status.getDisplayName());
+        statusLabel.setText("Статус: " + status.getDisplayName());
         statusLabel.setForeground(getStatusColor(status));
 
         int threat = district.getCurseLevel();
-        String stars = "";
-        for (int i = 0; i < threat; i++) stars += "*";
-        for (int i = threat; i < 5; i++) stars += "-";
-        threatLabel.setText("Threat: [" + stars + "] " + threat + "/5");
+        String stars = "★".repeat(threat) + "☆".repeat(5 - threat);
+        threatLabel.setText("Угроза: " + stars + " " + threat + "/5");
         threatLabel.setForeground(threat >= 3 ? HOSTILE_COLOR : LABEL_COLOR);
 
-        incomeLabel.setText("Income: " + district.getIncomePerTurn() + " CE/turn");
+        incomeLabel.setText("Доход: " + district.getIncomePerTurn() + "¥/ход");
+
+        Mission mission = district.getMission();
+        if (mission != null && district.hasEnemies()) {
+            String mText = mission.getDisplayName();
+            if (mission.hasTurnLimit()) mText += " (" + mission.getTurnLimit() + " ходов)";
+            missionLabel.setText("Миссия: " + mText);
+            missionLabel.setVisible(true);
+        } else {
+            missionLabel.setVisible(false);
+        }
 
         descriptionArea.setText(district.getDescription());
 
-        // Enemy list
         if (district.hasEnemies()) {
             StringBuilder sb = new StringBuilder();
             for (SorcererTeam team : district.getEnemyTeams()) {
@@ -137,17 +137,19 @@ public class DistrictInfoPanel extends JPanel {
             }
             enemyArea.setText(sb.toString().trim());
         } else {
-            enemyArea.setText(status == DistrictStatus.LOCKED ? "Unknown" : "None");
+            enemyArea.setText(status == DistrictStatus.LOCKED ? "Неизвестно" : "Нет");
         }
     }
 
     public void clear() {
         nameLabel.setText("--");
-        statusLabel.setText("Status: --");
+        statusLabel.setText("Статус: --");
         statusLabel.setForeground(LABEL_COLOR);
-        threatLabel.setText("Threat: --");
+        threatLabel.setText("Угроза: --");
         threatLabel.setForeground(LABEL_COLOR);
-        incomeLabel.setText("Income: --");
+        incomeLabel.setText("Доход: --");
+        missionLabel.setText("Миссия: --");
+        missionLabel.setVisible(false);
         descriptionArea.setText("");
         enemyArea.setText("");
     }
@@ -163,10 +165,10 @@ public class DistrictInfoPanel extends JPanel {
     private Color getStatusColor(DistrictStatus status) {
         switch (status) {
             case CONTROLLED: return CONTROLLED_COLOR;
-            case HOSTILE: return HOSTILE_COLOR;
-            case LOCKED: return LOCKED_COLOR;
-            case CONTESTED: return CONTESTED_COLOR;
-            default: return LABEL_COLOR;
+            case HOSTILE:    return HOSTILE_COLOR;
+            case LOCKED:     return LOCKED_COLOR;
+            case CONTESTED:  return CONTESTED_COLOR;
+            default:         return LABEL_COLOR;
         }
     }
 }

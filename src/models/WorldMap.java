@@ -1,16 +1,15 @@
 package models;
 
 import enums.DistrictStatus;
+import models.curses.Choso;
 import models.curses.Jogo;
 import models.curses.Mahito;
+import models.curses.Sukuna;
+import models.Mission;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * World map as a node graph of Districts.
- * Each district is a node connected to neighbors via edges.
- */
 public class WorldMap {
 
     private final List<District> districts;
@@ -20,47 +19,41 @@ public class WorldMap {
         this.districts = new ArrayList<>();
     }
 
-    /**
-     * Builds the default Tokyo map with 8 districts.
-     *
-     * Graph layout:
-     *          Akihabara
-     *              |
-     * Ikebukuro - Shinjuku - Asakusa
-     *              |
-     *   Harajuku - JujutsuHigh - Shibuya
-     *              |
-     *           Roppongi
-     */
     public void buildDefaultMap() {
         districts.clear();
 
-        // Create districts (x,y are screen coordinates for rendering)
-        District jujutsuHigh = new District("Jujutsu High", "Home base. Sorcerers heal between turns here.",
+        District jujutsuHigh = new District("Jujutsu High",
+                "Главная база магов. Команда восстанавливает HP между ходами.",
                 DistrictStatus.CONTROLLED, 400, 300, 0, 0);
 
-        District shibuya = new District("Shibuya", "Dense urban district crawling with powerful curses.",
+        District shibuya = new District("Сибуя",
+                "Плотный городской район, кишащий мощными проклятиями.",
                 DistrictStatus.HOSTILE, 600, 300, 3, 15);
 
-        District shinjuku = new District("Shinjuku", "Government district under curse threat.",
+        District shinjuku = new District("Синдзюку",
+                "Правительственный район под угрозой проклятий.",
                 DistrictStatus.HOSTILE, 400, 150, 2, 10);
 
-        District roppongi = new District("Roppongi", "Entertainment district with low-level curse activity.",
+        District roppongi = new District("Роппонги",
+                "Развлекательный район с малой активностью проклятий.",
                 DistrictStatus.HOSTILE, 400, 450, 1, 8);
 
-        District ikebukuro = new District("Ikebukuro", "Commercial hub. Locked until Shinjuku is secured.",
+        District ikebukuro = new District("Икебукуро",
+                "Торговый центр. Откроется после захвата Синдзюку.",
                 DistrictStatus.LOCKED, 200, 150, 3, 12);
 
-        District akihabara = new District("Akihabara", "Tech district. Locked until nearby areas are cleared.",
+        District akihabara = new District("Акихабара",
+                "Технологический район. Откроется после очистки соседних.",
                 DistrictStatus.LOCKED, 400, 30, 4, 18);
 
-        District harajuku = new District("Harajuku", "Fashion district with minor curse presence.",
+        District harajuku = new District("Харадзюку",
+                "Модный район с небольшим присутствием проклятий.",
                 DistrictStatus.HOSTILE, 200, 300, 1, 6);
 
-        District asakusa = new District("Asakusa", "Ancient temple district with very powerful curses.",
+        District asakusa = new District("Асакуса",
+                "Древний храмовый район с очень мощными проклятиями.",
                 DistrictStatus.HOSTILE, 600, 150, 4, 20);
 
-        // Build graph edges
         jujutsuHigh.addNeighbor(shibuya);
         jujutsuHigh.addNeighbor(shinjuku);
         jujutsuHigh.addNeighbor(roppongi);
@@ -72,10 +65,9 @@ public class WorldMap {
 
         ikebukuro.addNeighbor(akihabara);
 
-        // Populate enemies
         populateEnemies(shibuya, shinjuku, roppongi, harajuku, asakusa);
+        assignMissions(shibuya, shinjuku, roppongi, harajuku, asakusa);
 
-        // Add all to list
         districts.add(jujutsuHigh);
         districts.add(shibuya);
         districts.add(shinjuku);
@@ -91,64 +83,67 @@ public class WorldMap {
     private void populateEnemies(District shibuya, District shinjuku,
                                   District roppongi, District harajuku,
                                   District asakusa) {
-        // Shibuya: CursedSpiritMob swarm + Mahito (curseLevel=3)
-        SorcererTeam shibuyaEnemies = new SorcererTeam("Shibuya Curses");
+        SorcererTeam shibuyaEnemies = new SorcererTeam("Проклятия Сибуя");
         shibuyaEnemies.addMember(CursedSpiritMob.createSwarm());
         shibuyaEnemies.addMember(new Mahito());
         shibuya.addEnemyTeam(shibuyaEnemies);
 
-        // Shinjuku: Grade 2 pack x2 (curseLevel=2)
-        SorcererTeam shinjukuEnemies = new SorcererTeam("Shinjuku Curses");
+        SorcererTeam shinjukuEnemies = new SorcererTeam("Проклятия Синдзюку");
         shinjukuEnemies.addMember(CursedSpiritMob.createGrade2Pack());
         shinjukuEnemies.addMember(CursedSpiritMob.createGrade2Pack());
         shinjuku.addEnemyTeam(shinjukuEnemies);
 
-        // Roppongi: Swarm x2 (curseLevel=1, easy start)
-        SorcererTeam roppongiEnemies = new SorcererTeam("Roppongi Curses");
+        SorcererTeam roppongiEnemies = new SorcererTeam("Проклятия Роппонги");
         roppongiEnemies.addMember(CursedSpiritMob.createSwarm());
         roppongiEnemies.addMember(CursedSpiritMob.createSwarm());
         roppongi.addEnemyTeam(roppongiEnemies);
 
-        // Harajuku: Swarm (curseLevel=1, easy start)
-        SorcererTeam harajukuEnemies = new SorcererTeam("Harajuku Curses");
+        SorcererTeam harajukuEnemies = new SorcererTeam("Проклятия Харадзюку");
         harajukuEnemies.addMember(CursedSpiritMob.createSwarm());
         harajuku.addEnemyTeam(harajukuEnemies);
 
-        // Asakusa: Jogo + Grade 2 pack (curseLevel=4)
-        SorcererTeam asakusaEnemies = new SorcererTeam("Asakusa Curses");
+        SorcererTeam asakusaEnemies = new SorcererTeam("Проклятия Асакусы");
         asakusaEnemies.addMember(new Jogo());
         asakusaEnemies.addMember(CursedSpiritMob.createGrade2Pack());
         asakusa.addEnemyTeam(asakusaEnemies);
     }
 
-    /**
-     * Unlock districts whose prerequisites are met.
-     * - Ikebukuro unlocks when Shinjuku is CONTROLLED.
-     * - Akihabara unlocks when Ikebukuro or Shinjuku is CONTROLLED.
-     */
+    private void assignMissions(District shibuya, District shinjuku,
+                                 District roppongi, District harajuku,
+                                 District asakusa) {
+        
+        roppongi.setMission(Mission.extermination());
+        harajuku.setMission(Mission.extermination());
+        shinjuku.setMission(Mission.extermination());
+
+        shibuya.setMission(Mission.rescue(8));
+
+        asakusa.setMission(Mission.defense());
+    }
+
     public void updateLockedDistricts() {
         for (District d : districts) {
             if (d.getStatus() != DistrictStatus.LOCKED) continue;
 
-            if ("Ikebukuro".equals(d.getName())) {
-                if (isControlled("Shinjuku")) {
+            if ("Икебукуро".equals(d.getName())) {
+                if (isControlled("Синдзюку")) {
                     d.setStatus(DistrictStatus.HOSTILE);
-                    // Spawn enemies for newly unlocked district
-                    SorcererTeam enemies = new SorcererTeam("Ikebukuro Curses");
-                    enemies.addMember(CursedSpiritMob.createGrade2Pack());
+                    SorcererTeam enemies = new SorcererTeam("Проклятия Икебукуро");
+                    enemies.addMember(new Choso());
                     enemies.addMember(CursedSpiritMob.createGrade1Curse());
                     d.addEnemyTeam(enemies);
                     d.setCurseLevel(3);
+                    d.setMission(Mission.extermination());
                 }
-            } else if ("Akihabara".equals(d.getName())) {
-                if (isControlled("Ikebukuro") || isControlled("Shinjuku")) {
+            } else if ("Акихабара".equals(d.getName())) {
+                if (isControlled("Икебукуро") || isControlled("Синдзюку")) {
                     d.setStatus(DistrictStatus.HOSTILE);
-                    SorcererTeam enemies = new SorcererTeam("Akihabara Curses");
+                    SorcererTeam enemies = new SorcererTeam("Проклятия Акихабары");
+                    enemies.addMember(new Sukuna());
                     enemies.addMember(CursedSpiritMob.createGrade1Curse());
-                    enemies.addMember(CursedSpiritMob.createGrade2Pack());
-                    enemies.addMember(CursedSpiritMob.createGrade2Pack());
                     d.addEnemyTeam(enemies);
-                    d.setCurseLevel(4);
+                    d.setCurseLevel(5);
+                    d.setMission(Mission.rescue(10));
                 }
             }
         }

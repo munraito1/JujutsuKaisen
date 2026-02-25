@@ -8,7 +8,22 @@
       "Bash(\"$JAVA_HOME/bin/javac\" -d out src/enums/*.java src/techniques/*.java src/models/*.java src/models/heroes/*.java src/models/curses/*.java src/Main.java)",
       "Bash(\"$JAVA_HOME/bin/java\" -cp out Main)",
       "Bash(\"$JAVA_HOME/bin/javac\" -d out @sources.txt)",
-      "Bash(\"/c/Users/Роман/.jdks/openjdk-25.0.2/bin/javac\" -d out -sourcepath src src/Main.java)"
+      "Bash(\"/c/Users/Роман/.jdks/openjdk-25.0.2/bin/javac\" -d out -sourcepath src src/Main.java)",
+      "Bash(echo:*)",
+      "Bash(xargs:*)",
+      "Bash(cmd.exe /c \"cd /d C:\\\\Users\\\\Роман\\\\IdeaProjects\\\\JujutsuKaisen && javac -version 2>&1\":*)",
+      "Bash(cmd.exe /c \"javac -version\")",
+      "Bash(cmd.exe /c \"javac -version 2>&1 & echo DONE\")",
+      "Bash(powershell.exe -Command \"javac -version 2>&1\")",
+      "Bash(powershell.exe -Command \"Get-Command java* -ErrorAction SilentlyContinue | Select-Object Name,Source\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Program Files\\\\Java'' -ErrorAction SilentlyContinue; Get-ChildItem ''C:\\\\Program Files\\\\Eclipse Adoptium'' -ErrorAction SilentlyContinue; Get-ChildItem ''C:\\\\Program Files\\\\Microsoft'' -Filter ''*jdk*'' -ErrorAction SilentlyContinue\")",
+      "Bash(powershell.exe -Command:*)",
+      "Bash(cd /c/Users/Роман/IdeaProjects/JujutsuKaisen && cmd.exe /c compile.bat 2>&1)",
+      "Bash(python:*)",
+      "Bash(tail:*)",
+      "Bash(cd \"C:/Users/Роман/IdeaProjects/JujutsuKaisen\" && cmd /c compile.bat 2>&1)",
+      "Bash(echo === $dir ===:*)",
+      "Bash(find:*)"
     ]
   }
 }

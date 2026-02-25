@@ -5,18 +5,17 @@ import controllers.BattleListener;
 import controllers.BattleManager;
 import enums.BattleState;
 import models.*;
+import models.Mission;
+import models.TechTree;
 import techniques.CursedTechnique;
 import utils.Position;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Main battle window. Combines all panels, implements BattleListener,
- * handles technique selection popup and animation coordination.
- */
 public class BattleFrame extends JFrame implements BattleListener {
 
     private final BattleManager battleManager;
@@ -29,16 +28,31 @@ public class BattleFrame extends JFrame implements BattleListener {
     private JTextArea logArea;
     private JLabel statusLabel;
 
-    // Animation state
     private boolean waitingForAnimation = false;
 
-    // Callback for when battle ends (used by GameFrame)
     private Consumer<BattleState> battleEndCallback;
 
+    private Mission currentMission;
+
     public BattleFrame(SorcererTeam playerTeam, SorcererTeam enemyTeam) {
-        super("Jujutsu Kaisen - Tactical Battle");
+        this(playerTeam, enemyTeam, null, null);
+    }
+
+    public BattleFrame(SorcererTeam playerTeam, SorcererTeam enemyTeam, TechTree techTree) {
+        this(playerTeam, enemyTeam, techTree, null);
+    }
+
+    public BattleFrame(SorcererTeam playerTeam, SorcererTeam enemyTeam,
+                       TechTree techTree, Mission mission) {
+        super("Jujutsu Kaisen — Тактический бой");
+
+        this.currentMission = mission;
 
         battleManager = new BattleManager();
+        if (techTree != null) battleManager.setTechTree(techTree);
+        if (mission != null && mission.hasTurnLimit()) {
+            battleManager.setMaxRounds(mission.getTurnLimit());
+        }
         aiController = new AIController(battleManager);
         battleManager.addListener(this);
 
@@ -48,10 +62,6 @@ public class BattleFrame extends JFrame implements BattleListener {
         battleManager.startBattle();
     }
 
-    /**
-     * Set a callback to be invoked when the battle ends.
-     * Used by GameFrame to handle battle results and return to the map.
-     */
     public void setBattleEndCallback(Consumer<BattleState> callback) {
         this.battleEndCallback = callback;
     }
@@ -62,11 +72,10 @@ public class BattleFrame extends JFrame implements BattleListener {
         setResizable(false);
         getContentPane().setBackground(new Color(50, 48, 45));
 
-        // --- Top bar ---
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(new Color(60, 58, 55));
 
-        statusLabel = new JLabel("  Preparing battle...");
+        statusLabel = new JLabel("  Подготовка к бою...");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
         statusLabel.setForeground(Color.WHITE);
         statusLabel.setPreferredSize(new Dimension(280, 30));
@@ -76,7 +85,6 @@ public class BattleFrame extends JFrame implements BattleListener {
         topPanel.add(turnOrderPanel, BorderLayout.CENTER);
         add(topPanel, BorderLayout.NORTH);
 
-        // --- Center: grid + unit info ---
         gridPanel = new BattleGridPanel(battleManager, this);
         unitInfoPanel = new UnitInfoPanel();
 
@@ -86,7 +94,6 @@ public class BattleFrame extends JFrame implements BattleListener {
         centerPanel.add(unitInfoPanel, BorderLayout.EAST);
         add(centerPanel, BorderLayout.CENTER);
 
-        // --- Bottom: actions + log ---
         JPanel bottomPanel = new JPanel(new BorderLayout());
         actionPanel = new ActionPanel(this);
         bottomPanel.add(actionPanel, BorderLayout.NORTH);
@@ -99,60 +106,49 @@ public class BattleFrame extends JFrame implements BattleListener {
         JScrollPane logScroll = new JScrollPane(logArea);
         logScroll.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.GRAY),
-                "Battle Log", 0, 0, null, Color.GRAY));
+                "Журнал боя", 0, 0, null, Color.GRAY));
         bottomPanel.add(logScroll, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
+
+        getRootPane().registerKeyboardAction(
+                e -> gridPanel.clearHighlights(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         pack();
         setLocationRelativeTo(null);
     }
 
-    // ==================== Button callbacks ====================
-
-    public void onMoveClicked() {
-        gridPanel.showMovementRange();
-    }
-
-    public void onAttackClicked() {
-        gridPanel.showAttackRange();
-    }
+    public void onMoveClicked()    { gridPanel.showMovementRange(); }
+    public void onAttackClicked()  { gridPanel.showAttackRange(); }
 
     public void onTechniqueClicked() {
         Combatant current = battleManager.getCurrentUnit();
         if (current == null) return;
 
-        List<CursedTechnique> allTechs = battleManager.getAllTechniquesForUnit(current);
+        List<CursedTechnique> allTechs  = battleManager.getAllTechniquesForUnit(current);
         List<CursedTechnique> available = battleManager.getAvailableTechniques();
-
         if (allTechs.isEmpty()) return;
 
-        // Build popup menu with all techniques
         JPopupMenu popup = new JPopupMenu();
         for (CursedTechnique tech : allTechs) {
             boolean usable = available.contains(tech);
             int cd = battleManager.getCooldownRemaining(tech);
 
-            String label = String.format("%s  (%d CE, R:%d)",
+            String label = String.format("%s  (%d ПЭ, Д:%d)",
                     tech.getName(), tech.getCursedEnergyCost(), tech.getRange());
-            if (cd > 0) {
-                label += String.format("  [CD: %d]", cd);
-            }
+            if (cd > 0) label += String.format("  [КД: %d]", cd);
 
             JMenuItem item = new JMenuItem(label);
             item.setEnabled(usable);
             item.setFont(new Font("Arial", usable ? Font.BOLD : Font.PLAIN, 12));
-            if (usable) {
-                item.setForeground(new Color(100, 60, 180));
-            }
+            if (usable) item.setForeground(new Color(100, 60, 180));
 
             final CursedTechnique selectedTech = tech;
-            item.addActionListener(e -> {
-                gridPanel.showTechniqueRange(selectedTech);
-            });
+            item.addActionListener(e -> gridPanel.showTechniqueRange(selectedTech));
             popup.add(item);
         }
 
-        // Show popup above the technique button
         JButton btn = actionPanel.getTechniqueButton();
         popup.show(btn, 0, -popup.getPreferredSize().height);
     }
@@ -168,14 +164,8 @@ public class BattleFrame extends JFrame implements BattleListener {
         battleManager.endTurn();
     }
 
-    // ==================== Action coordination ====================
-
-    /**
-     * Called after move or basic attack completes (from grid panel).
-     * For techniques, this is called after the animation finishes.
-     */
     public void onActionCompleted() {
-        if (waitingForAnimation) return; // animation callback will handle it
+        if (waitingForAnimation) return;
 
         updateActionButtons();
         gridPanel.repaint();
@@ -183,7 +173,6 @@ public class BattleFrame extends JFrame implements BattleListener {
         Combatant current = battleManager.getCurrentUnit();
         if (current != null) unitInfoPanel.showUnit(current);
 
-        // Auto-end turn if both moved and acted
         if (battleManager.isCurrentUnitMoved() && battleManager.isCurrentUnitActed()) {
             Timer timer = new Timer(300, e -> {
                 if (battleManager.getState() != BattleState.VICTORY
@@ -196,9 +185,7 @@ public class BattleFrame extends JFrame implements BattleListener {
         }
     }
 
-    public void showUnitInfo(Combatant unit) {
-        unitInfoPanel.showUnit(unit);
-    }
+    public void showUnitInfo(Combatant unit) { unitInfoPanel.showUnit(unit); }
 
     private void updateActionButtons() {
         Combatant current = battleManager.getCurrentUnit();
@@ -208,14 +195,12 @@ public class BattleFrame extends JFrame implements BattleListener {
         }
 
         boolean canMove = !battleManager.isCurrentUnitMoved();
-        boolean canAct = !battleManager.isCurrentUnitActed();
+        boolean canAct  = !battleManager.isCurrentUnitActed();
         boolean hasTech = battleManager.hasUsableTechniques(current);
 
-        String techLabel = "Techniques";
+        String techLabel = "Техника";
         List<CursedTechnique> techs = battleManager.getAllTechniquesForUnit(current);
-        if (techs.size() == 1) {
-            techLabel = techs.get(0).getName();
-        }
+        if (techs.size() == 1) techLabel = techs.get(0).getName();
 
         actionPanel.updateButtons(canMove, canAct, hasTech, techLabel);
     }
@@ -232,18 +217,22 @@ public class BattleFrame extends JFrame implements BattleListener {
         timer.start();
     }
 
-    // ==================== BattleListener ====================
-
     @Override
     public void onBattleStarted() {
-        log("Battle begins!");
+        log("Бой начинается!");
     }
 
     @Override
     public void onTurnStarted(Combatant unit) {
-        String side = battleManager.isPlayerUnit(unit) ? "[ALLY]" : "[ENEMY]";
-        statusLabel.setText(String.format("  Round %d  -  %s %s",
-                battleManager.getRoundNumber(), side, unit.getName()));
+        String side = battleManager.isPlayerUnit(unit) ? "[СОЮЗНИК]" : "[ВРАГ]";
+        String missionInfo = "";
+        if (currentMission != null) {
+            missionInfo = " | " + currentMission.getDisplayName();
+            int rem = battleManager.getRoundsRemaining();
+            if (rem >= 0) missionInfo += " ⏱" + rem;
+        }
+        statusLabel.setText(String.format("  Раунд %d%s  —  %s %s",
+                battleManager.getRoundNumber(), missionInfo, side, unit.getName()));
         turnOrderPanel.updateTurnOrder(battleManager.getTurnOrder(), unit, battleManager);
         unitInfoPanel.showUnit(unit);
         gridPanel.repaint();
@@ -257,29 +246,48 @@ public class BattleFrame extends JFrame implements BattleListener {
 
     @Override
     public void onUnitMoved(Combatant unit, Position from, Position to) {
-        log(unit.getName() + " moves " + from + " -> " + to);
+        log(unit.getName() + " перемещается " + from + " → " + to);
         gridPanel.repaint();
     }
 
     @Override
-    public void onUnitAttacked(Combatant attacker, Combatant target, int damage) {
-        log(String.format("%s attacks %s for %d dmg [HP: %d/%d]",
-                attacker.getName(), target.getName(), damage,
-                target.getHp(), target.getMaxHp()));
+    public void onUnitAttacked(Combatant attacker, Combatant target, int damage, boolean blackFlash) {
+        if (blackFlash) {
+            log(String.format("⚡ ЧЁРНАЯ МОЛНИЯ! %s атакует %s на %d ед. [HP: %d/%d]",
+                    attacker.getName(), target.getName(), damage,
+                    target.getHp(), target.getMaxHp()));
+        } else {
+            log(String.format("%s атакует %s на %d ед. [HP: %d/%d]",
+                    attacker.getName(), target.getName(), damage,
+                    target.getHp(), target.getMaxHp()));
+        }
         unitInfoPanel.showUnit(target);
         gridPanel.repaint();
+
+        if (blackFlash) {
+            Position targetPos = battleManager.getUnitPosition(target);
+            if (targetPos != null) {
+                waitingForAnimation = true;
+                actionPanel.disableAll();
+                gridPanel.playAnimation("BLACK_FLASH", targetPos, () -> {
+                    waitingForAnimation = false;
+                    onActionCompleted();
+                });
+                return;
+            }
+        }
+        onActionCompleted();
     }
 
     @Override
     public void onTechniqueUsed(Combatant user, Combatant target, String techniqueName,
                                 int damage, String animationType, Position targetPos) {
-        log(String.format("%s uses %s on %s for %d dmg [HP: %d/%d]",
+        log(String.format("%s применяет «%s» на %s: %d ед. [HP: %d/%d]",
                 user.getName(), techniqueName, target.getName(), damage,
                 target.getHp(), target.getMaxHp()));
         unitInfoPanel.showUnit(target);
         gridPanel.repaint();
 
-        // Play animation if applicable
         if (animationType != null && !"NONE".equals(animationType) && targetPos != null) {
             waitingForAnimation = true;
             actionPanel.disableAll();
@@ -294,21 +302,21 @@ public class BattleFrame extends JFrame implements BattleListener {
 
     @Override
     public void onUnitDefended(Combatant unit) {
-        log(unit.getName() + " takes a defensive stance!");
+        log(unit.getName() + " занимает оборонительную позицию!");
         gridPanel.repaint();
     }
 
     @Override
     public void onUnitDefeated(Combatant unit) {
-        log(">>> " + unit.getName() + " has been DEFEATED! <<<");
+        log(">>> " + unit.getName() + " ПОВЕРЖЕН! <<<");
         gridPanel.repaint();
     }
 
     @Override
     public void onBattleEnded(BattleState result) {
         String message = result == BattleState.VICTORY
-                ? "VICTORY! All enemies defeated!"
-                : "DEFEAT... All allies have fallen.";
+                ? "ПОБЕДА! Все враги повержены!"
+                : "ПОРАЖЕНИЕ... Все союзники пали.";
         log("========== " + message + " ==========");
         statusLabel.setText("  " + message);
         actionPanel.disableAll();
@@ -316,10 +324,7 @@ public class BattleFrame extends JFrame implements BattleListener {
         gridPanel.repaint();
 
         SwingUtilities.invokeLater(() -> {
-            JOptionPane.showMessageDialog(this, message, "Battle Over",
-                    result == BattleState.VICTORY
-                            ? JOptionPane.INFORMATION_MESSAGE
-                            : JOptionPane.WARNING_MESSAGE);
+            showBattleResultDialog(result, message);
 
             if (battleEndCallback != null) {
                 battleEndCallback.accept(result);
@@ -330,6 +335,54 @@ public class BattleFrame extends JFrame implements BattleListener {
     @Override
     public void onMessage(String message) {
         log(message);
+    }
+
+    private void showBattleResultDialog(BattleState result, String message) {
+        boolean victory = (result == BattleState.VICTORY);
+
+        JDialog dialog = new JDialog(this, "Бой завершён", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setResizable(false);
+
+        Color bgColor = victory ? new Color(30, 55, 30) : new Color(55, 25, 25);
+        Color accentColor = victory ? new Color(80, 200, 80) : new Color(220, 60, 60);
+
+        JPanel panel = new JPanel(new BorderLayout(0, 12));
+        panel.setBackground(bgColor);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(accentColor, 2),
+                BorderFactory.createEmptyBorder(24, 36, 20, 36)));
+
+        JLabel icon = new JLabel(victory ? "✦" : "✖", SwingConstants.CENTER);
+        icon.setFont(new Font("Arial", Font.PLAIN, 42));
+        icon.setForeground(accentColor);
+
+        JLabel text = new JLabel(message, SwingConstants.CENTER);
+        text.setFont(new Font("Arial", Font.BOLD, 16));
+        text.setForeground(victory ? new Color(180, 240, 180) : new Color(240, 160, 160));
+
+        JButton ok = new JButton("Продолжить");
+        ok.setFont(new Font("Arial", Font.BOLD, 13));
+        ok.setBackground(accentColor.darker());
+        ok.setForeground(Color.WHITE);
+        ok.setFocusPainted(false);
+        ok.setOpaque(true);
+        ok.setBorderPainted(false);
+        ok.setPreferredSize(new Dimension(150, 36));
+        ok.addActionListener(e -> dialog.dispose());
+
+        JPanel btnPanel = new JPanel();
+        btnPanel.setBackground(bgColor);
+        btnPanel.add(ok);
+
+        panel.add(icon, BorderLayout.NORTH);
+        panel.add(text, BorderLayout.CENTER);
+        panel.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.add(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     private void log(String message) {

@@ -2,10 +2,6 @@ package models;
 
 import enums.Grade;
 
-/**
- * Abstract class representing a jujutsu sorcerer.
- * Extends Combatant with cursed energy and grade system.
- */
 public abstract class Sorcerer extends Combatant {
 
     private int cursedEnergy;
@@ -20,9 +16,6 @@ public abstract class Sorcerer extends Combatant {
         this.grade = grade;
     }
 
-    /**
-     * Spend cursed energy. Returns true if enough energy was available.
-     */
     public boolean useCursedEnergy(int amount) {
         if (cursedEnergy >= amount) {
             cursedEnergy -= amount;
@@ -31,17 +24,10 @@ public abstract class Sorcerer extends Combatant {
         return false;
     }
 
-    /**
-     * Restore cursed energy. Cannot exceed max.
-     */
     public void restoreCursedEnergy(int amount) {
         cursedEnergy = Math.min(maxCursedEnergy, cursedEnergy + amount);
     }
 
-    /**
-     * Promote to the next grade rank (e.g. Grade 4 -> Grade 3).
-     * Also increases max cursed energy.
-     */
     public void promoteGrade() {
         Grade[] grades = Grade.values();
         for (int i = 0; i < grades.length - 1; i++) {
@@ -54,13 +40,9 @@ public abstract class Sorcerer extends Combatant {
         }
     }
 
-    // --- Getters ---
-
     public int getCursedEnergy() { return cursedEnergy; }
     public int getMaxCursedEnergy() { return maxCursedEnergy; }
     public Grade getGrade() { return grade; }
-
-    // --- Protected setters ---
 
     protected void setCursedEnergy(int cursedEnergy) { this.cursedEnergy = cursedEnergy; }
     protected void setMaxCursedEnergy(int maxCursedEnergy) { this.maxCursedEnergy = maxCursedEnergy; }

@@ -4,22 +4,20 @@ import enums.DistrictStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import models.Mission;
 
-/**
- * A district (node) on the world map graph.
- * Contains enemies, neighbors, and map display coordinates.
- */
 public class District {
 
     private final String name;
     private final String description;
     private DistrictStatus status;
-    private final int x; // screen position for rendering
+    private final int x; 
     private final int y;
-    private int curseLevel; // 0-5, threat level
+    private int curseLevel; 
     private final List<SorcererTeam> enemyTeams;
     private final List<District> neighbors;
     private int incomePerTurn;
+    private Mission currentMission;
 
     public District(String name, String description, DistrictStatus status,
                     int x, int y, int curseLevel, int incomePerTurn) {
@@ -37,7 +35,7 @@ public class District {
     public void addNeighbor(District neighbor) {
         if (!neighbors.contains(neighbor)) {
             neighbors.add(neighbor);
-            neighbor.neighbors.add(this); // bidirectional
+            neighbor.neighbors.add(this); 
         }
     }
 
@@ -54,9 +52,6 @@ public class District {
         return !enemyTeams.isEmpty();
     }
 
-    /**
-     * Combines all enemy teams into a single team for battle.
-     */
     public SorcererTeam getCombinedEnemyTeam() {
         SorcererTeam combined = new SorcererTeam("Curses of " + name);
         for (SorcererTeam team : enemyTeams) {
@@ -71,8 +66,6 @@ public class District {
         return neighbors.contains(other);
     }
 
-    // --- Getters & Setters ---
-
     public String getName() { return name; }
     public String getDescription() { return description; }
     public DistrictStatus getStatus() { return status; }
@@ -84,6 +77,8 @@ public class District {
     public List<SorcererTeam> getEnemyTeams() { return enemyTeams; }
     public List<District> getNeighbors() { return neighbors; }
     public int getIncomePerTurn() { return incomePerTurn; }
+    public Mission getMission() { return currentMission; }
+    public void setMission(Mission mission) { this.currentMission = mission; }
 
     @Override
     public String toString() {
