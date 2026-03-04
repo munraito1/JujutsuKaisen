@@ -37,9 +37,19 @@ public class GameManager {
     private final EventSystem     eventSystem;
     private Mission               currentMission;
 
-    private final List<NamedSorcerer> heroPool;        
-    private final List<NamedSorcerer> heroRoster;      
-    private final List<Integer>       heroCosts;        
+    private static class HeroEntry {
+        final NamedSorcerer hero;
+        final int cost;
+        final int requiredOfficeLevel;
+        HeroEntry(NamedSorcerer hero, int cost, int requiredOfficeLevel) {
+            this.hero = hero;
+            this.cost = cost;
+            this.requiredOfficeLevel = requiredOfficeLevel;
+        }
+    }
+
+    private final List<NamedSorcerer> heroPool;
+    private final List<HeroEntry>     heroRoster;
 
     private District  currentDistrict;
     private int       turnNumber;
@@ -55,7 +65,6 @@ public class GameManager {
         this.eventSystem     = new EventSystem();
         this.heroPool        = new ArrayList<>();
         this.heroRoster      = new ArrayList<>();
-        this.heroCosts       = new ArrayList<>();
         this.listeners       = new ArrayList<>();
         initHeroRoster();
         this.turnNumber      = 1;
@@ -66,10 +75,10 @@ public class GameManager {
     }
 
     private void initHeroRoster() {
-        heroRoster.add(new MakiZenin());   heroCosts.add(5);
-        heroRoster.add(new InumakiToge()); heroCosts.add(8);
-        heroRoster.add(new Panda());       heroCosts.add(8);
-        heroRoster.add(new SatoruGojo());  heroCosts.add(20);
+        heroRoster.add(new HeroEntry(new MakiZenin(),   5,  1));
+        heroRoster.add(new HeroEntry(new InumakiToge(), 8,  2));
+        heroRoster.add(new HeroEntry(new Panda(),       8,  2));
+        heroRoster.add(new HeroEntry(new SatoruGojo(),  20, 3));
     }
 
     public void addListener(GameListener listener) {
@@ -157,6 +166,12 @@ public class GameManager {
         } else {
             fireMessage("Миссия провалена! Отступаем на базу...");
             currentDistrict = worldMap.getStartingDistrict();
+            for (Combatant c : playerTeam.getMembers()) {
+                if (!c.isAlive()) {
+                    c.revive((int) (c.getMaxHp() * 0.30));
+                }
+            }
+            fireMessage("Отряд отступил и перегруппировался (30% HP).");
         }
 
         fireBattleFinished(currentDistrict, result);
@@ -227,21 +242,21 @@ public class GameManager {
     public List<NamedSorcerer> getAvailableForRecruitment() {
         int officeLevel = buildingManager.getRecruitmentOfficeLevel();
         List<NamedSorcerer> result = new ArrayList<>();
-        for (int i = 0; i < heroRoster.size(); i++) {
-            NamedSorcerer hero = heroRoster.get(i);
-            boolean alreadyRecruited = heroPool.contains(hero)
-                    || playerTeam.getMembers().contains(hero);
-            int reqLevel = (i == 0) ? 1 : (i <= 2) ? 2 : 3;
-            if (officeLevel >= reqLevel && !alreadyRecruited) {
-                result.add(hero);
+        for (HeroEntry entry : heroRoster) {
+            boolean alreadyRecruited = heroPool.contains(entry.hero)
+                    || playerTeam.getMembers().contains(entry.hero);
+            if (officeLevel >= entry.requiredOfficeLevel && !alreadyRecruited) {
+                result.add(entry.hero);
             }
         }
         return result;
     }
 
     public int getRecruitCost(NamedSorcerer hero) {
-        int idx = heroRoster.indexOf(hero);
-        return idx >= 0 ? heroCosts.get(idx) : 999;
+        for (HeroEntry entry : heroRoster) {
+            if (entry.hero == hero) return entry.cost;
+        }
+        return 999;
     }
 
     public boolean recruitHero(NamedSorcerer hero) {

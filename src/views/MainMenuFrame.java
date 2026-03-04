@@ -1,5 +1,11 @@
 package views;
 
+import models.Combatant;
+import models.SorcererTeam;
+import models.heroes.MegumiFushiguro;
+import models.heroes.NobaraKugisaki;
+import models.heroes.YujiItadori;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -74,8 +80,14 @@ public class MainMenuFrame extends JFrame {
     }
 
     private void openTeamSelection() {
-        TeamSelectionFrame sel = new TeamSelectionFrame(this);
-        sel.setVisible(true);
-        setVisible(false);
+        SorcererTeam playerTeam = new SorcererTeam("Tokyo Jujutsu High");
+        for (Combatant hero : new Combatant[]{
+                new YujiItadori(), new MegumiFushiguro(), new NobaraKugisaki()}) {
+            playerTeam.addMember(hero);
+        }
+        SwingUtilities.invokeLater(() -> {
+            new GameFrame(playerTeam).setVisible(true);
+            dispose();
+        });
     }
 }

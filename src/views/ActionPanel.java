@@ -2,8 +2,6 @@ package views;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 public class ActionPanel extends JPanel {
 
@@ -46,27 +44,8 @@ public class ActionPanel extends JPanel {
     }
 
     private JButton createButton(String text, Color bg) {
-        JButton btn = new JButton(text);
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false);
-        btn.setFont(new Font("Arial", Font.BOLD, 12));
+        JButton btn = UIUtils.createStyledButton(text, bg);
         btn.setPreferredSize(new Dimension(118, 32));
-        btn.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(bg.darker(), 1),
-                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-        btn.setOpaque(true);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) {
-                if (btn.isEnabled()) btn.setBackground(bg.brighter());
-            }
-            @Override public void mouseExited(MouseEvent e) {
-                btn.setBackground(bg);
-            }
-        });
-
         return btn;
     }
 

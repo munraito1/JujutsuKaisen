@@ -37,9 +37,15 @@ public abstract class Combatant {
 
     public void heal(int amount) {
         if (!alive && amount > 0) {
-            return; 
+            return;
         }
         hp = Math.min(maxHp, hp + amount);
+    }
+
+    public void revive(int hpAmount) {
+        if (alive) return;
+        alive = true;
+        hp = Math.max(1, Math.min(maxHp, hpAmount));
     }
 
     public void levelUp() {

@@ -2,7 +2,7 @@ package models;
 
 import enums.Grade;
 
-public abstract class CursedSpirit extends Combatant {
+public abstract class CursedSpirit extends Combatant implements CursedEnergyHolder {
 
     private int cursedEnergy;
     private int maxCursedEnergy;

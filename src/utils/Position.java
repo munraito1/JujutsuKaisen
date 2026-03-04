@@ -2,6 +2,7 @@ package utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Position {
 
@@ -20,9 +21,6 @@ public class Position {
         return Math.max(Math.abs(x - other.x), Math.abs(y - other.y));
     }
 
-    public int manhattanDistance(Position other) {
-        return Math.abs(x - other.x) + Math.abs(y - other.y);
-    }
 
     public List<Position> getNeighbors() {
         List<Position> neighbors = new ArrayList<>(8);
@@ -45,7 +43,7 @@ public class Position {
 
     @Override
     public int hashCode() {
-        return 31 * x + y;
+        return Objects.hash(x, y);
     }
 
     @Override

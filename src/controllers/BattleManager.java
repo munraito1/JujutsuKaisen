@@ -3,6 +3,7 @@ package controllers;
 import enums.BattleState;
 import enums.TileType;
 import models.*;
+import models.CursedEnergyHolder;
 import models.TechTree;
 import techniques.CursedTechnique;
 import utils.Position;
@@ -332,6 +333,11 @@ public class BattleManager {
         int hpBefore = target.getHp();
         tech.execute(user, target);
         int actualDamage = hpBefore - target.getHp();
+        if (defendingUnits.contains(target) && actualDamage > 0) {
+            int reduction = actualDamage / 2;
+            target.heal(reduction);
+            actualDamage -= reduction;
+        }
 
         String animType = tech.getAnimationType();
         if (tech.canTriggerBlackFlash() && tech.getBlackFlashChance() > 0
@@ -443,14 +449,12 @@ public class BattleManager {
     }
 
     private int getUnitCE(Combatant unit) {
-        if (unit instanceof Sorcerer) return ((Sorcerer) unit).getCursedEnergy();
-        if (unit instanceof CursedSpirit) return ((CursedSpirit) unit).getCursedEnergy();
+        if (unit instanceof CursedEnergyHolder) return ((CursedEnergyHolder) unit).getCursedEnergy();
         return 0;
     }
 
     private boolean spendCE(Combatant unit, int amount) {
-        if (unit instanceof Sorcerer) return ((Sorcerer) unit).useCursedEnergy(amount);
-        if (unit instanceof CursedSpirit) return ((CursedSpirit) unit).useCursedEnergy(amount);
+        if (unit instanceof CursedEnergyHolder) return ((CursedEnergyHolder) unit).useCursedEnergy(amount);
         return false;
     }
 

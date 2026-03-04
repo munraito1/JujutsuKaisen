@@ -68,11 +68,16 @@ public class AIController {
         boolean acted = false;
         List<CursedTechnique> available = battleManager.getAvailableTechniques();
         if (!available.isEmpty()) {
-            available.sort((a, b) -> b.getCursedEnergyCost() - a.getCursedEnergyCost());
+            // Sort by effective power: cost * (2 if blackFlash-capable, else 1)
+            available.sort((a, b) -> {
+                int pa = a.getCursedEnergyCost() * (a.canTriggerBlackFlash() ? 2 : 1);
+                int pb = b.getCursedEnergyCost() * (b.canTriggerBlackFlash() ? 2 : 1);
+                return pb - pa;
+            });
             for (CursedTechnique tech : available) {
                 List<Combatant> techTargets = battleManager.getTechniqueTargets(tech);
                 if (!techTargets.isEmpty()) {
-                    Combatant best = pickWeakest(techTargets);
+                    Combatant best = pickBestTarget(techTargets, battleManager.getCurrentUnit());
                     battleManager.useTechnique(tech, best);
                     acted = true;
                     break;
@@ -83,7 +88,9 @@ public class AIController {
         if (!acted) {
             List<Combatant> attackTargets = battleManager.getAttackableTargets();
             if (!attackTargets.isEmpty()) {
-                battleManager.basicAttack(pickWeakest(attackTargets));
+                Combatant bestTarget = pickBestTarget(attackTargets,
+                        battleManager.getCurrentUnit());
+                battleManager.basicAttack(bestTarget);
                 acted = true;
             }
         }
@@ -95,9 +102,16 @@ public class AIController {
         battleManager.endTurn();
     }
 
-    private Combatant pickWeakest(List<Combatant> targets) {
+    /** Prefer killable targets (one-shot), then most dangerous (highest ATK). */
+    private Combatant pickBestTarget(List<Combatant> targets, Combatant attacker) {
+        if (attacker != null) {
+            int estimatedDmg = attacker.getAttack();
+            for (Combatant t : targets) {
+                if (estimatedDmg >= t.getHp()) return t;
+            }
+        }
         return targets.stream()
-                .min(Comparator.comparingInt(Combatant::getHp))
+                .max(Comparator.comparingInt(Combatant::getAttack))
                 .orElse(targets.get(0));
     }
 }

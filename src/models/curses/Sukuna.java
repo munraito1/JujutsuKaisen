@@ -8,7 +8,7 @@ import techniques.FlamesArrow;
 public class Sukuna extends SpecialCurse {
 
     public Sukuna() {
-        super("Рёмэн Сукуна", 350, 55, 30, 32, 200,
+        super("Рёмэн Сукуна", 1000, 55, 30, 32, 1000,
                 "Злобный храм");
         addTechnique(new CleaveSlash());
         addTechnique(new FlamesArrow());

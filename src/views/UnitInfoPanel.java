@@ -1,6 +1,7 @@
 package views;
 
 import models.*;
+import models.CursedEnergyHolder;
 
 import javax.swing.*;
 import java.awt.*;
@@ -139,45 +140,35 @@ public class UnitInfoPanel extends JPanel {
         xpLabel.setVisible(true);
         xpBar.setVisible(true);
 
+        // title + grade by type
         if (unit instanceof NamedSorcerer) {
             NamedSorcerer ns = (NamedSorcerer) unit;
             titleLabel.setText(ns.getTitle());
             gradeLabel.setText("Ранг: " + ns.getGrade().getDisplayName());
-            ceBar.setMaximum(ns.getMaxCursedEnergy());
-            ceBar.setValue(ns.getCursedEnergy());
-            ceBar.setString(ns.getCursedEnergy() + " / " + ns.getMaxCursedEnergy());
-            ceBar.setVisible(true);
-            ceLabel.setVisible(true);
         } else if (unit instanceof Sorcerer) {
-            Sorcerer s = (Sorcerer) unit;
             titleLabel.setText("Отряд");
-            gradeLabel.setText("Ранг: " + s.getGrade().getDisplayName());
-            ceBar.setMaximum(s.getMaxCursedEnergy());
-            ceBar.setValue(s.getCursedEnergy());
-            ceBar.setString(s.getCursedEnergy() + " / " + s.getMaxCursedEnergy());
-            ceBar.setVisible(true);
-            ceLabel.setVisible(true);
+            gradeLabel.setText("Ранг: " + ((Sorcerer) unit).getGrade().getDisplayName());
         } else if (unit instanceof SpecialCurse) {
             SpecialCurse sc = (SpecialCurse) unit;
             titleLabel.setText("Домен: " + sc.getDomainName());
             gradeLabel.setText("Ранг: " + sc.getCurseGrade().getDisplayName());
-            ceBar.setMaximum(sc.getMaxCursedEnergy());
-            ceBar.setValue(sc.getCursedEnergy());
-            ceBar.setString(sc.getCursedEnergy() + " / " + sc.getMaxCursedEnergy());
-            ceBar.setVisible(true);
-            ceLabel.setVisible(true);
         } else if (unit instanceof CursedSpirit) {
-            CursedSpirit cs = (CursedSpirit) unit;
             titleLabel.setText("Проклятый дух");
-            gradeLabel.setText("Ранг: " + cs.getCurseGrade().getDisplayName());
-            ceBar.setMaximum(cs.getMaxCursedEnergy());
-            ceBar.setValue(cs.getCursedEnergy());
-            ceBar.setString(cs.getCursedEnergy() + " / " + cs.getMaxCursedEnergy());
-            ceBar.setVisible(true);
-            ceLabel.setVisible(true);
+            gradeLabel.setText("Ранг: " + ((CursedSpirit) unit).getCurseGrade().getDisplayName());
         } else {
             titleLabel.setText(" ");
             gradeLabel.setText(" ");
+        }
+
+        // CE bar — unified via CursedEnergyHolder
+        if (unit instanceof CursedEnergyHolder) {
+            CursedEnergyHolder holder = (CursedEnergyHolder) unit;
+            ceBar.setMaximum(holder.getMaxCursedEnergy());
+            ceBar.setValue(holder.getCursedEnergy());
+            ceBar.setString(holder.getCursedEnergy() + " / " + holder.getMaxCursedEnergy());
+            ceBar.setVisible(true);
+            ceLabel.setVisible(true);
+        } else {
             ceBar.setVisible(false);
             ceLabel.setVisible(false);
         }

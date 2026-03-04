@@ -9,7 +9,9 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MapPanel extends JPanel {
 
@@ -122,9 +124,14 @@ public class MapPanel extends JPanel {
 
         List<District> districts = worldMap.getDistricts();
 
+        Set<Long> drawnEdges = new HashSet<>();
         for (District d : districts) {
             for (District neighbor : d.getNeighbors()) {
-                if (districts.indexOf(d) < districts.indexOf(neighbor)) {
+                long id1 = System.identityHashCode(d);
+                long id2 = System.identityHashCode(neighbor);
+                long key = id1 < id2 ? (id1 << 32) | (id2 & 0xFFFFFFFFL)
+                                     : (id2 << 32) | (id1 & 0xFFFFFFFFL);
+                if (drawnEdges.add(key)) {
                     drawEdge(g2, d, neighbor);
                 }
             }

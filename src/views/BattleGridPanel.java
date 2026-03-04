@@ -178,9 +178,9 @@ public class BattleGridPanel extends JPanel {
             case ATTACK:
                 Combatant target = battleManager.getUnitAt(clicked);
                 if (target != null && attackHighlights.contains(clicked)) {
-                    battleManager.basicAttack(target);
                     clearHighlightsInternal();
-                    parentFrame.onActionCompleted();
+                    battleManager.basicAttack(target);
+                    // onActionCompleted is called by BattleFrame.onUnitAttacked (via listener)
                 }
                 break;
 
@@ -255,14 +255,14 @@ public class BattleGridPanel extends JPanel {
     }
 
     private void drawMidFieldDivider(Graphics2D g) {
-        int w = BattleManager.GRID_SIZE * TILE_SIZE;
+        int gridHeight = BattleManager.GRID_SIZE * TILE_SIZE;
         int midX = (BattleManager.GRID_SIZE / 2) * TILE_SIZE;
 
         Stroke old = g.getStroke();
         g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
                 10f, new float[]{6f, 4f}, 0f));
         g.setColor(DIVIDER_COLOR);
-        g.drawLine(midX, 4, midX, w - 4);
+        g.drawLine(midX, 4, midX, gridHeight - 4);
         g.setStroke(old);
     }
 
@@ -289,12 +289,19 @@ public class BattleGridPanel extends JPanel {
             g.setStroke(new BasicStroke(1f));
         }
 
-        g.setColor(unitColor);
+        boolean isExhausted = isCurrent
+                && battleManager.isCurrentUnitMoved()
+                && battleManager.isCurrentUnitActed();
+        g.setColor(isExhausted ? unitColor.darker().darker() : unitColor);
         g.fillOval(px + margin, py + margin, unitSize, unitSize);
         g.setColor(unitColor.darker());
         g.setStroke(new BasicStroke(1.5f));
         g.drawOval(px + margin, py + margin, unitSize, unitSize);
         g.setStroke(new BasicStroke(1f));
+        if (isExhausted) {
+            g.setColor(new Color(0, 0, 0, 80));
+            g.fillOval(px + margin, py + margin, unitSize, unitSize);
+        }
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 12));

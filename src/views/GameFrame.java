@@ -176,6 +176,7 @@ public class GameFrame extends JFrame implements GameListener,
         BuildingFrame buildingFrame = new BuildingFrame(this, gameManager);
         buildingFrame.setVisible(true);
         updateStatusLabel();
+        mapPanel.repaint();
     }
 
     @Override
@@ -183,6 +184,7 @@ public class GameFrame extends JFrame implements GameListener,
         TechTreeFrame techTreeFrame = new TechTreeFrame(this, gameManager);
         techTreeFrame.setVisible(true);
         updateStatusLabel();
+        mapPanel.repaint();
     }
 
     @Override
@@ -190,11 +192,13 @@ public class GameFrame extends JFrame implements GameListener,
         HeroManagementFrame heroFrame = new HeroManagementFrame(this, gameManager);
         heroFrame.setVisible(true);
         updateStatusLabel();
+        mapPanel.repaint();
     }
 
     @Override
     public void onDistrictChanged(District district) {
         mapPanel.setCurrentDistrict(district);
+        infoPanel.showDistrict(district);
         updateStatusLabel();
         updateActionButtons();
         mapPanel.repaint();
@@ -219,7 +223,7 @@ public class GameFrame extends JFrame implements GameListener,
         } else {
             log("Поражение! Отступаем на базу.");
         }
-        refreshMap();
+        // refreshMap() is already called by the BattleEndCallback in onStartMissionClicked
     }
 
     @Override
@@ -227,8 +231,17 @@ public class GameFrame extends JFrame implements GameListener,
         log(message);
     }
 
+    private static final int MAX_LOG_LINES = 100;
+
     private void log(String message) {
         logArea.append(message + "\n");
-        logArea.setCaretPosition(logArea.getDocument().getLength());
+        javax.swing.text.Document doc = logArea.getDocument();
+        javax.swing.text.Element root = doc.getDefaultRootElement();
+        while (root.getElementCount() > MAX_LOG_LINES) {
+            javax.swing.text.Element first = root.getElement(0);
+            try { doc.remove(first.getStartOffset(), first.getEndOffset()); }
+            catch (javax.swing.text.BadLocationException ignored) { break; }
+        }
+        logArea.setCaretPosition(doc.getLength());
     }
 }

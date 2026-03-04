@@ -67,7 +67,7 @@ public class BattleFrame extends JFrame implements BattleListener {
     }
 
     private void initUI() {
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(4, 4));
         setResizable(false);
         getContentPane().setBackground(new Color(50, 48, 45));
@@ -160,6 +160,12 @@ public class BattleFrame extends JFrame implements BattleListener {
     }
 
     public void onEndTurnClicked() {
+        if (!battleManager.isCurrentUnitActed() || !battleManager.isCurrentUnitMoved()) {
+            int choice = JOptionPane.showConfirmDialog(this,
+                    "Юнит не использовал все действия. Завершить ход?",
+                    "Конец хода", JOptionPane.YES_NO_OPTION);
+            if (choice != JOptionPane.YES_OPTION) return;
+        }
         gridPanel.clearHighlights();
         battleManager.endTurn();
     }
@@ -385,8 +391,17 @@ public class BattleFrame extends JFrame implements BattleListener {
         dialog.setVisible(true);
     }
 
+    private static final int MAX_LOG_LINES = 150;
+
     private void log(String message) {
         logArea.append(message + "\n");
-        logArea.setCaretPosition(logArea.getDocument().getLength());
+        javax.swing.text.Document doc = logArea.getDocument();
+        javax.swing.text.Element root = doc.getDefaultRootElement();
+        while (root.getElementCount() > MAX_LOG_LINES) {
+            javax.swing.text.Element first = root.getElement(0);
+            try { doc.remove(first.getStartOffset(), first.getEndOffset()); }
+            catch (javax.swing.text.BadLocationException ignored) { break; }
+        }
+        logArea.setCaretPosition(doc.getLength());
     }
 }

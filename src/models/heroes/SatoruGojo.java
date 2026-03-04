@@ -10,7 +10,7 @@ public class SatoruGojo extends NamedSorcerer {
 
     public SatoruGojo() {
         super("Сатору Годзё", "Сильнейший",
-                180, 55, 35, 38, 200, Grade.SPECIAL_GRADE);
+                180, 55, 35, 38, 300, Grade.SPECIAL_GRADE);
         addTechnique(new InfinityBarrier());
         addTechnique(new InfiniteVoidTechnique());
     }
