@@ -1,5 +1,9 @@
+import views.BattleFrame;
+
+import javax.swing.*;
+
 public class Main {
     public static void main(String[] args) {
-        MapGame.main(args);
+        SwingUtilities.invokeLater(() -> new BattleFrame().setVisible(true));
     }
 }
